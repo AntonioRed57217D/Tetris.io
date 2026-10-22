@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tetris Arcade</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Sci-Fi Space HUD Background Layer -->
+  <div class="hud-bg" aria-hidden="true">
+    <div class="hud-stars"></div>
+    <div class="hud-nebula"></div>
+    <div class="hud-schematics"></div>
+    <div class="hud-perspective-grid"></div>
+  </div>
+
+  <div class="app-shell">
+    <!-- Top Header Bar -->
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <span class="b-c"></span>
+          <span class="b-m"></span>
+          <span class="b-y"></span>
+          <span class="b-g"></span>
+        </div>
+        <div>
+          <h1 class="brand-title">TETRIS</h1>
+          <p class="brand-subtitle">Classic Block Puzzle</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="level-select-wrap">
+          <label for="start-level" class="sr-label">Start Level</label>
+          <select id="start-level" class="control-select" title="Starting Level">
+            <option value="1">Lv. 1</option>
+            <option value="3">Lv. 3</option>
+            <option value="5">Lv. 5</option>
+            <option value="8">Lv. 8</option>
+            <option value="10">Lv. 10</option>
+          </select>
+        </div>
+        <button id="btn-ghost" type="button" class="icon-btn neon-pill active" title="Toggle Ghost Piece (G)" aria-pressed="true">
+          <span class="btn-dot"></span>
+          <span>Ghost: ON</span>
+        </button>
+        <button id="btn-mute" type="button" class="icon-btn neon-pill active" title="Toggle Audio (M)" aria-pressed="true">
+          <span id="mute-label">SFX: ON</span>
+        </button>
+        <button id="btn-pause" type="button" class="action-btn secondary" title="Pause / Resume (P)">
+          Pause
+        </button>
+        <button id="btn-restart" type="button" class="action-btn primary" title="New Game (R)">
+          New Game
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Game Arena -->
+    <main class="game-layout">
+      <!-- Decorative Tech Cables Behind Panels -->
+      <svg class="arena-cables" viewBox="0 0 900 620" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M 180 120 C 230 130, 240 210, 290 220" stroke="#0891b2" stroke-width="4" fill="none" opacity="0.55" />
+        <path d="M 180 128 C 230 138, 240 218, 290 228" stroke="#f97316" stroke-width="2" fill="none" opacity="0.65" />
+        <path d="M 185 450 C 235 465, 250 520, 300 535" stroke="#06b6d4" stroke-width="3" fill="none" opacity="0.5" />
+        <path d="M 600 330 C 660 340, 680 370, 730 365" stroke="#a855f7" stroke-width="4" fill="none" opacity="0.5" />
+        <path d="M 600 338 C 660 348, 680 378, 730 373" stroke="#22d3ee" stroke-width="2" fill="none" opacity="0.65" />
+      </svg>
+
+      <!-- Left Sidebar: Hold & Stats -->
+      <aside class="side-panel left-panel">
+        <div class="panel-card hold-card">
+          <span class="card-rivets" aria-hidden="true"></span>
+          <div class="card-header">
+            <span class="card-title">HOLD</span>
+            <span class="card-key">C / SHIFT</span>
+          </div>
+          <div class="mini-canvas-wrap">
+            <span class="hud-brackets" aria-hidden="true"></span>
+            <canvas id="hold-canvas" width="128" height="88"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-card stats-grid">
+          <span class="card-rivets" aria-hidden="true"></span>
+          <div class="stat-box">
+            <span class="stat-label">SCORE</span>
+            <span id="score-val" class="stat-value">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">HIGH SCORE</span>
+            <span id="high-score-val" class="stat-value accent">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">LEVEL</span>
+            <span id="level-val" class="stat-value">1</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">LINES</span>
+            <span id="lines-val" class="stat-value">0</span>
+          </div>
+        </div>
+
+        <div class="panel-card desktop-keys">
+          <span class="card-rivets" aria-hidden="true"></span>
+          <div class="card-header">
+            <span class="card-title">CONTROLS</span>
+            <span class="led-strip" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+          <ul class="key-list">
+            <li><span>Move</span><span class="kbd-pair"><kbd>←</kbd><kbd>→</kbd></span></li>
+            <li><span>Rotate</span><span class="kbd-pair"><kbd>Space</kbd> / <kbd>↑</kbd></span></li>
+            <li><span>Soft Drop</span><kbd>↓</kbd></li>
+            <li><span>Hard Drop</span><kbd>Enter</kbd></li>
+            <li><span>Hold Piece</span><kbd>C</kbd></li>
+            <li><span>Pause</span><kbd>P</kbd></li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Center Board -->
+      <section class="board-section" aria-label="Tetris Game Board">
+        <div id="board-frame" class="board-frame">
+          <span class="frame-vents left-vents" aria-hidden="true"></span>
+          <span class="frame-vents right-vents" aria-hidden="true"></span>
+          <canvas id="board-canvas" width="300" height="600"></canvas>
+
+          <!-- Floating Action Notification -->
+          <div id="action-toast" class="action-toast" aria-live="polite"></div>
+
+          <!-- Start / Pause / Game Over Overlay -->
+          <div id="board-overlay" class="board-overlay">
+            <div class="overlay-box">
+              <div class="badge-frame">
+                <span id="overlay-badge" class="overlay-badge">ARCADE READY</span>
+              </div>
+              <div class="metal-title-plate">
+                <span class="plate-rivets" aria-hidden="true"></span>
+                <h2 id="overlay-title" class="overlay-title">TETRIS</h2>
+              </div>
+              <p id="overlay-desc" class="overlay-desc">
+                Stack tetrominoes, clear lines, and build combos.
+              </p>
+              <div id="overlay-stats" class="overlay-stats hidden">
+                <div class="ov-stat">
+                  <span>Final Score</span>
+                  <strong id="final-score">0</strong>
+                </div>
+                <div class="ov-stat">
+                  <span>Lines Cleared</span>
+                  <strong id="final-lines">0</strong>
+                </div>
+              </div>
+              <div class="cta-hud-wrap">
+                <span class="cta-brackets" aria-hidden="true"></span>
+                <button id="btn-overlay-start" type="button" class="overlay-cta">
+                  Start Game
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Sidebar: Next Queue & Combo -->
+      <aside class="side-panel right-panel">
+        <div class="panel-card next-card">
+          <span class="card-rivets" aria-hidden="true"></span>
+          <div class="card-header">
+            <span class="card-title">NEXT</span>
+            <span class="card-key">3 QUEUE</span>
+          </div>
+          <div class="mini-canvas-wrap next-wrap">
+            <span class="hud-brackets" aria-hidden="true"></span>
+            <canvas id="next-canvas" width="128" height="240"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-card combo-card">
+          <span class="card-rivets" aria-hidden="true"></span>
+          <div class="stat-row">
+            <span class="stat-label">COMBO</span>
+            <span id="combo-val" class="stat-badge">0x</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">STREAK</span>
+            <span id="b2b-val" class="stat-badge">Standard</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Touch / On-Screen Arcade Controls Dock -->
+    <footer class="touch-controls" aria-label="On-screen game controls">
+      <div class="dock-speaker left-speaker" aria-hidden="true"></div>
+      <div class="touch-group dpad-group">
+        <button id="pad-left" type="button" class="pad-btn cyan-pad" aria-label="Move Left">
+          ← Left
+        </button>
+        <button id="pad-down" type="button" class="pad-btn magenta-pad" aria-label="Soft Drop">
+          ↓ Soft
+        </button>
+        <button id="pad-right" type="button" class="pad-btn violet-pad" aria-label="Move Right">
+          Right →
+        </button>
+      </div>
+      <div class="touch-group action-group">
+        <button id="pad-hold" type="button" class="pad-btn util-pad" aria-label="Hold Piece">
+          Hold
+        </button>
+        <button id="pad-ccw" type="button" class="pad-btn rot-pad" aria-label="Rotate Counter-Clockwise">
+          ↺ CCW
+        </button>
+        <button id="pad-cw" type="button" class="pad-btn cw-pad" aria-label="Rotate Clockwise">
+          ↻ Rotate
+        </button>
+        <button id="pad-drop" type="button" class="pad-btn drop-pad" aria-label="Hard Drop">
+          ⤓ Hard Drop
+        </button>
+      </div>
+      <div class="dock-speaker right-speaker" aria-hidden="true"></div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
